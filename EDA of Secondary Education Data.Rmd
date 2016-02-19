@@ -1,0 +1,99 @@
+---
+title: "GapMinder-SecondaryExpenditure_Data"
+output: html_document
+---
+
+## Read and Tidy the HIV Estimation data from xlsx file
+
+```{r}
+setwd('C:/Users/Sarah/Documents/R Files/EDA/GapMinder Lesson 3/EDA Project files')
+list.files()
+
+install.packages('xlsx')
+library(xlsxjars)
+library(rJava)
+library(xlsx)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# read the excel sheet into dataframe
+se <- read.xlsx("expenditure secondary.xlsx", sheetIndex = 1, header= TRUE, check.names=FALSE)
+
+# gather the year and estimated prevalences columns and rename to appropriate names
+se <- gather(se, "year", "expenses", 2:15, na.rm = FALSE, convert = TRUE)
+
+names(se)[names(se) == "Expenditure per student, secondary (% of GDP per capita)"] <- "country"
+
+seByCountryYear <- se %>%
+  na.omit() %>%
+  group_by(country, year)
+  
+# create dataframes containing only the top 20 and bottom 20 spending in a year by a country
+seHighest20 <- head(seByCountryYear[order(seByCountryYear$expenses, decreasing = T),], n = 20)
+seHighest20$countryYear <- paste(seHighest20$country, seHighest20$year, sep=" - ")
+seLowest20 <- head(seByCountryYear[order(seByCountryYear$expenses),], n = 20)
+seLowest20$countryYear <- paste(seLowest20$country, seLowest20$year, sep=" - ")
+
+# create dataframe containing the mean expense per year by a country 
+seByCountry <- se %>%
+  na.omit() %>%
+  group_by(country)
+  
+seMeanByCountry <- seByCountry %>%
+  summarise(meanExpenses = mean(expenses))
+
+
+```
+
+## Create simple histogram
+
+```{r, echo=FALSE}
+# histogram plotting mean expense per year by a country
+
+
+qplot(x = meanExpenses, data = seMeanByCountry, binwidth=20)
+
+# most of the data is below 90. Figure out outliers
+summary(seByCountry)
+seByCountry[seByCountry$meanExpenses>90,]
+
+# plot the data without outliers
+qplot(x = meanExpenses, data = seMeanByCountry, binwidth = 4) +
+  scale_x_continuous(lim=c(0,90), breaks = seq(0,90,4))
+
+
+
+# Plot Top 20 and Bottom 20 expenses
+ggplot(seHighest20, aes(x = factor(countryYear), y = expenses, fill = country)) + 
+  geom_bar(stat = "identity") +
+  xlab("Country - Year of Expenditure") +
+  ylab("% of GDP") +
+  ggtitle("Top 20 Expenditures by a country in a year (% of GDP)") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0, vjust = .33))
+
+
+ggplot(seLowest20, aes(x = factor(countryYear), y = expenses, fill = country)) + 
+  geom_bar(stat = "identity") +
+  xlab("Country - Year of Expenditure") +
+  ylab("% of GDP") +
+  ggtitle("Bottom 20 Expenditures by a country in a year (% of GDP)") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 0, vjust = .33))
+
+```
+
+On plotting the histogram, we find an outlier in the Honduras. The Honduras spends an average of 279.691 % of its GDP per student in secondary education, while all the other countries spend less than 90 percent of their GDP on the same.
+## Boxplot over categorical variable, country
+
+```{r}
+qplot(x = country, y = expenses, 
+      data = seByCountry,
+      geom='boxplot') + 
+  scale_y_continuous(lim =c(0,90))
+ + opts(axis.text.x = theme_text(angle = 90, hjust = 0))
+  
+
+```
+
+
+

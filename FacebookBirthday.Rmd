@@ -1,0 +1,68 @@
+---
+title: "FacebookBirthdays"
+output: html_document
+---
+
+
+
+```{r}
+library(ggplot2)
+
+setwd('C:/Users/Sarah/Documents/R Files/EDA/GapMinder Lesson 3/EDA Project files')
+list.files()
+
+FriendsBirthdays <- read.csv('Birthdays.csv')
+dates <- FriendsBirthdays$Start.Date
+dates <- strptime(dates, format="%m/%d/%Y")
+birthdays = data.frame(date=dates, month=strftime(dates, "%m"), day=strftime(dates, "%d"))
+birthdays$month <- factor(birthdays$month, labels = c("January","February","March", "April","May","June","July","August","September", "October","November","December"), ordered=TRUE)
+
+str(birthdays)
+View(birthdays)
+rm(FriendsBirthdays)
+rm(dates)
+
+
+
+```
+There are 583 birthdays in the dataset.
+
+# How many people share your birthday? Do you know them?
+# (Reserve time with them or save money to buy them a gift!) 
+3
+```{r}
+length(subset(birthdays, month == 9 & day == 30))
+```
+
+
+# Which month contains the most number of birthdays?
+October
+```{r}
+qplot(x=month, data=birthdays, fill=month, 
+      xlab = "Month",
+      ylab = "Number of birthdays")
+ggsave("birthdayByMonth.jpg")
+
+```
+# How many birthdays are in each month?
+ January  February     March     April       May      June 
+       45        38        38        39        62        51 
+     July    August September   October  November  December 
+       43        45        44        67        56        55 
+```{r}
+table(birthdays$month)
+```
+# Which day of the year has the most number of birthdays?
+May 11
+```{r}
+which.max(table(birthdays$date))
+```
+# Do you have at least 365 friends that have birthdays on everyday of the year?
+No. There are some days with no birthdays
+```{r}
+library(dplyr)
+birthdays$md <- paste(birthdays$month, birthdays$day, sep=" - ")
+qplot(x=md, data = birthdays,
+      xlab = "Month- Day",
+      ylab = "Number of birthdays")
+```
